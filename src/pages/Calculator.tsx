@@ -20,10 +20,11 @@ interface PricingConfig {
 
 const defaultConfig: PricingConfig = {
   panSizes: {
-    "6 inch": 30,
-    "8 inch": 45,
-    "10 inch": 65,
-    "12 inch": 85,
+    "4 inch bento": 20,
+    "4 inch tall": 25,
+    "6 inch round": 25,
+    "6 inch tall": 30,
+    "8 inch round": 30,
   },
   flavors: {
     "Vanilla": 0,
