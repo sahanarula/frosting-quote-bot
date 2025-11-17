@@ -8,7 +8,7 @@ import { Settings, Cake } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface PricingConfig {
-  panSizes: { [key: string]: number };
+  panSizes: { [key: string]: { price: number; servings: string } };
   flavors: { [key: string]: number };
   shapes: { [key: string]: number };
   fondantElements: number;
@@ -20,11 +20,16 @@ interface PricingConfig {
 
 const defaultConfig: PricingConfig = {
   panSizes: {
-    "4 inch bento": 20,
-    "4 inch tall": 25,
-    "6 inch round": 25,
-    "6 inch tall": 30,
-    "8 inch round": 30,
+    "4 inch bento": { price: 20, servings: "4-6" },
+    "4 inch tall": { price: 30, servings: "6-8" },
+    "6 inch round": { price: 30, servings: "10-12" },
+    "6 inch tall": { price: 45, servings: "15-18" },
+    "8 inch round": { price: 45, servings: "20-24" },
+    "8 inch tall": { price: 60, servings: "30-35" },
+    "10 inch round": { price: 65, servings: "30-38" },
+    "10 inch tall": { price: 80, servings: "45-50" },
+    "12 inch round": { price: 85, servings: "40-50" },
+    "12 inch tall": { price: 100, servings: "60-70" },
   },
   flavors: {
     "Vanilla": 0,
@@ -67,7 +72,7 @@ const Calculator = () => {
   const calculateTotal = (): number => {
     let total = 0;
     
-    if (panSize) total += config.panSizes[panSize] || 0;
+    if (panSize) total += config.panSizes[panSize]?.price || 0;
     if (flavor) total += config.flavors[flavor] || 0;
     if (shape) total += config.shapes[shape] || 0;
     
@@ -114,11 +119,11 @@ const Calculator = () => {
                   <Label className="text-base font-semibold">Pan Size</Label>
                   <RadioGroup value={panSize} onValueChange={setPanSize}>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      {Object.entries(config.panSizes).map(([size, price]) => (
+                      {Object.entries(config.panSizes).map(([size, data]) => (
                         <div key={size} className="flex items-center space-x-2 rounded-lg border p-3 hover:bg-accent/50 transition-colors">
                           <RadioGroupItem value={size} id={`size-${size}`} />
                           <Label htmlFor={`size-${size}`} className="flex-1 cursor-pointer font-normal">
-                            {size} <span className="text-muted-foreground">(${price})</span>
+                            {size} <span className="text-muted-foreground">(${data.price} • {data.servings} servings)</span>
                           </Label>
                         </div>
                       ))}
@@ -238,7 +243,7 @@ const Calculator = () => {
                   {panSize && (
                     <div className="flex justify-between pb-2 border-b">
                       <span className="text-muted-foreground">Pan Size: {panSize}</span>
-                      <span className="font-medium">${config.panSizes[panSize]}</span>
+                      <span className="font-medium">${config.panSizes[panSize]?.price}</span>
                     </div>
                   )}
                   {flavor && config.flavors[flavor] > 0 && (

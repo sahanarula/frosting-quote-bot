@@ -8,7 +8,7 @@ import { ArrowLeft, Save } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface PricingConfig {
-  panSizes: { [key: string]: number };
+  panSizes: { [key: string]: { price: number; servings: string } };
   flavors: { [key: string]: number };
   shapes: { [key: string]: number };
   fondantElements: number;
@@ -20,11 +20,16 @@ interface PricingConfig {
 
 const defaultConfig: PricingConfig = {
   panSizes: {
-    "4 inch bento": 20,
-    "4 inch tall": 25,
-    "6 inch round": 25,
-    "6 inch tall": 30,
-    "8 inch round": 30,
+    "4 inch bento": { price: 20, servings: "4-6" },
+    "4 inch tall": { price: 30, servings: "6-8" },
+    "6 inch round": { price: 30, servings: "10-12" },
+    "6 inch tall": { price: 45, servings: "15-18" },
+    "8 inch round": { price: 45, servings: "20-24" },
+    "8 inch tall": { price: 60, servings: "30-35" },
+    "10 inch round": { price: 65, servings: "30-38" },
+    "10 inch tall": { price: 80, servings: "45-50" },
+    "12 inch round": { price: 85, servings: "40-50" },
+    "12 inch tall": { price: 100, servings: "60-70" },
   },
   flavors: {
     "Vanilla": 0,
@@ -68,7 +73,10 @@ const Settings = () => {
   const updatePanSize = (size: string, value: string) => {
     setConfig({
       ...config,
-      panSizes: { ...config.panSizes, [size]: parseFloat(value) || 0 },
+      panSizes: { 
+        ...config.panSizes, 
+        [size]: { ...config.panSizes[size], price: parseFloat(value) || 0 }
+      },
     });
   };
 
@@ -108,13 +116,13 @@ const Settings = () => {
               <CardDescription>Base prices for different pan sizes</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
-              {Object.entries(config.panSizes).map(([size, price]) => (
+              {Object.entries(config.panSizes).map(([size, data]) => (
                 <div key={size} className="space-y-2">
-                  <Label htmlFor={`pan-${size}`}>{size}</Label>
+                  <Label htmlFor={`pan-${size}`}>{size} ({data.servings} servings)</Label>
                   <Input
                     id={`pan-${size}`}
                     type="number"
-                    value={price}
+                    value={data.price}
                     onChange={(e) => updatePanSize(size, e.target.value)}
                     className="w-full"
                   />
