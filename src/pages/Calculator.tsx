@@ -11,11 +11,15 @@ interface PricingConfig {
   panSizes: { [key: string]: { price: number; servings: string } };
   flavors: { [key: string]: number };
   shapes: { [key: string]: number };
-  fondantElements: number;
+  smallFondant: number;
+  mediumFondant: number;
+  largeFondant: number;
   colors: number;
   fakeFlowers: number;
   realFlowers: number;
   macarons: number;
+  stickerPrints: number;
+  ediblePrint: number;
 }
 
 const defaultConfig: PricingConfig = {
@@ -62,14 +66,18 @@ const defaultConfig: PricingConfig = {
   shapes: {
     "Round": 0,
     "Square": 5,
-    "Heart": 15,
-    "Custom": 25,
+    "Heart": 10,
+    "Custom": 15,
   },
-  fondantElements: 15,
+  smallFondant: 8,
+  mediumFondant: 15,
+  largeFondant: 20,
   colors: 5,
-  fakeFlowers: 10,
-  realFlowers: 25,
+  fakeFlowers: 3,
+  realFlowers: 9,
   macarons: 3,
+  stickerPrints: 5,
+  ediblePrint: 10,
 };
 
 const Calculator = () => {
@@ -77,18 +85,57 @@ const Calculator = () => {
   const [panSize, setPanSize] = useState<string>("");
   const [flavor, setFlavor] = useState<string>("");
   const [shape, setShape] = useState<string>("");
-  const [fondantCount, setFondantCount] = useState<number>(0);
+  const [smallFondantCount, setSmallFondantCount] = useState<number>(0);
+  const [mediumFondantCount, setMediumFondantCount] = useState<number>(0);
+  const [largeFondantCount, setLargeFondantCount] = useState<number>(0);
   const [colorCount, setColorCount] = useState<number>(0);
   const [fakeFlowerCount, setFakeFlowerCount] = useState<number>(0);
   const [realFlowerCount, setRealFlowerCount] = useState<number>(0);
   const [macaronCount, setMacaronCount] = useState<number>(0);
+  const [stickerPrintCount, setStickerPrintCount] = useState<number>(0);
+  const [ediblePrintCount, setEdiblePrintCount] = useState<number>(0);
 
   useEffect(() => {
     const saved = localStorage.getItem("cakePricing");
     if (saved) {
       setConfig(JSON.parse(saved));
     }
+
+    // Load from URL params
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("panSize")) setPanSize(params.get("panSize") || "");
+    if (params.get("flavor")) setFlavor(params.get("flavor") || "");
+    if (params.get("shape")) setShape(params.get("shape") || "");
+    if (params.get("smallFondant")) setSmallFondantCount(parseInt(params.get("smallFondant") || "0"));
+    if (params.get("mediumFondant")) setMediumFondantCount(parseInt(params.get("mediumFondant") || "0"));
+    if (params.get("largeFondant")) setLargeFondantCount(parseInt(params.get("largeFondant") || "0"));
+    if (params.get("colors")) setColorCount(parseInt(params.get("colors") || "0"));
+    if (params.get("fakeFlowers")) setFakeFlowerCount(parseInt(params.get("fakeFlowers") || "0"));
+    if (params.get("realFlowers")) setRealFlowerCount(parseInt(params.get("realFlowers") || "0"));
+    if (params.get("macarons")) setMacaronCount(parseInt(params.get("macarons") || "0"));
+    if (params.get("stickerPrints")) setStickerPrintCount(parseInt(params.get("stickerPrints") || "0"));
+    if (params.get("ediblePrint")) setEdiblePrintCount(parseInt(params.get("ediblePrint") || "0"));
   }, []);
+
+  // Update URL params whenever selections change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (panSize) params.set("panSize", panSize);
+    if (flavor) params.set("flavor", flavor);
+    if (shape) params.set("shape", shape);
+    if (smallFondantCount > 0) params.set("smallFondant", smallFondantCount.toString());
+    if (mediumFondantCount > 0) params.set("mediumFondant", mediumFondantCount.toString());
+    if (largeFondantCount > 0) params.set("largeFondant", largeFondantCount.toString());
+    if (colorCount > 0) params.set("colors", colorCount.toString());
+    if (fakeFlowerCount > 0) params.set("fakeFlowers", fakeFlowerCount.toString());
+    if (realFlowerCount > 0) params.set("realFlowers", realFlowerCount.toString());
+    if (macaronCount > 0) params.set("macarons", macaronCount.toString());
+    if (stickerPrintCount > 0) params.set("stickerPrints", stickerPrintCount.toString());
+    if (ediblePrintCount > 0) params.set("ediblePrint", ediblePrintCount.toString());
+    
+    const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
+    window.history.replaceState({}, "", newUrl);
+  }, [panSize, flavor, shape, smallFondantCount, mediumFondantCount, largeFondantCount, colorCount, fakeFlowerCount, realFlowerCount, macaronCount, stickerPrintCount, ediblePrintCount]);
 
   const calculateTotal = (): number => {
     let total = 0;
@@ -97,11 +144,15 @@ const Calculator = () => {
     if (flavor) total += config.flavors[flavor] || 0;
     if (shape) total += config.shapes[shape] || 0;
     
-    total += fondantCount * config.fondantElements;
+    total += smallFondantCount * config.smallFondant;
+    total += mediumFondantCount * config.mediumFondant;
+    total += largeFondantCount * config.largeFondant;
     total += colorCount * config.colors;
     total += fakeFlowerCount * config.fakeFlowers;
     total += realFlowerCount * config.realFlowers;
     total += macaronCount * config.macarons;
+    total += stickerPrintCount * config.stickerPrints;
+    total += ediblePrintCount * config.ediblePrint;
     
     return total;
   };
@@ -194,13 +245,35 @@ const Calculator = () => {
               <CardContent className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="fondant">Fondant Elements (${config.fondantElements} each)</Label>
+                    <Label htmlFor="smallFondant">Small Fondant Element (${config.smallFondant} each)</Label>
                     <Input
-                      id="fondant"
+                      id="smallFondant"
                       type="number"
                       min="0"
-                      value={fondantCount}
-                      onChange={(e) => setFondantCount(parseInt(e.target.value) || 0)}
+                      value={smallFondantCount}
+                      onChange={(e) => setSmallFondantCount(parseInt(e.target.value) || 0)}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="mediumFondant">Medium Fondant Element (${config.mediumFondant} each)</Label>
+                    <Input
+                      id="mediumFondant"
+                      type="number"
+                      min="0"
+                      value={mediumFondantCount}
+                      onChange={(e) => setMediumFondantCount(parseInt(e.target.value) || 0)}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="largeFondant">Large Fondant Element (${config.largeFondant} each)</Label>
+                    <Input
+                      id="largeFondant"
+                      type="number"
+                      min="0"
+                      value={largeFondantCount}
+                      onChange={(e) => setLargeFondantCount(parseInt(e.target.value) || 0)}
                       className="w-full"
                     />
                   </div>
@@ -248,6 +321,28 @@ const Calculator = () => {
                       className="w-full"
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="stickerPrints">Sticker Prints (${config.stickerPrints} each)</Label>
+                    <Input
+                      id="stickerPrints"
+                      type="number"
+                      min="0"
+                      value={stickerPrintCount}
+                      onChange={(e) => setStickerPrintCount(parseInt(e.target.value) || 0)}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ediblePrint">Edible Print (${config.ediblePrint} each)</Label>
+                    <Input
+                      id="ediblePrint"
+                      type="number"
+                      min="0"
+                      value={ediblePrintCount}
+                      onChange={(e) => setEdiblePrintCount(parseInt(e.target.value) || 0)}
+                      className="w-full"
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -279,10 +374,22 @@ const Calculator = () => {
                       <span className="font-medium">${config.shapes[shape]}</span>
                     </div>
                   )}
-                  {fondantCount > 0 && (
+                  {smallFondantCount > 0 && (
                     <div className="flex justify-between pb-2 border-b">
-                      <span className="text-muted-foreground">Fondant ({fondantCount})</span>
-                      <span className="font-medium">${fondantCount * config.fondantElements}</span>
+                      <span className="text-muted-foreground">Small Fondant ({smallFondantCount})</span>
+                      <span className="font-medium">${smallFondantCount * config.smallFondant}</span>
+                    </div>
+                  )}
+                  {mediumFondantCount > 0 && (
+                    <div className="flex justify-between pb-2 border-b">
+                      <span className="text-muted-foreground">Medium Fondant ({mediumFondantCount})</span>
+                      <span className="font-medium">${mediumFondantCount * config.mediumFondant}</span>
+                    </div>
+                  )}
+                  {largeFondantCount > 0 && (
+                    <div className="flex justify-between pb-2 border-b">
+                      <span className="text-muted-foreground">Large Fondant ({largeFondantCount})</span>
+                      <span className="font-medium">${largeFondantCount * config.largeFondant}</span>
                     </div>
                   )}
                   {colorCount > 0 && (
@@ -307,6 +414,18 @@ const Calculator = () => {
                     <div className="flex justify-between pb-2 border-b">
                       <span className="text-muted-foreground">Macarons ({macaronCount})</span>
                       <span className="font-medium">${macaronCount * config.macarons}</span>
+                    </div>
+                  )}
+                  {stickerPrintCount > 0 && (
+                    <div className="flex justify-between pb-2 border-b">
+                      <span className="text-muted-foreground">Sticker Prints ({stickerPrintCount})</span>
+                      <span className="font-medium">${stickerPrintCount * config.stickerPrints}</span>
+                    </div>
+                  )}
+                  {ediblePrintCount > 0 && (
+                    <div className="flex justify-between pb-2 border-b">
+                      <span className="text-muted-foreground">Edible Print ({ediblePrintCount})</span>
+                      <span className="font-medium">${ediblePrintCount * config.ediblePrint}</span>
                     </div>
                   )}
                 </div>

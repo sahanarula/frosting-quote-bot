@@ -11,11 +11,15 @@ interface PricingConfig {
   panSizes: { [key: string]: { price: number; servings: string } };
   flavors: { [key: string]: number };
   shapes: { [key: string]: number };
-  fondantElements: number;
+  smallFondant: number;
+  mediumFondant: number;
+  largeFondant: number;
   colors: number;
   fakeFlowers: number;
   realFlowers: number;
   macarons: number;
+  stickerPrints: number;
+  ediblePrint: number;
 }
 
 const defaultConfig: PricingConfig = {
@@ -62,14 +66,18 @@ const defaultConfig: PricingConfig = {
   shapes: {
     "Round": 0,
     "Square": 5,
-    "Heart": 15,
-    "Custom": 25,
+    "Heart": 10,
+    "Custom": 15,
   },
-  fondantElements: 15,
+  smallFondant: 8,
+  mediumFondant: 15,
+  largeFondant: 20,
   colors: 5,
-  fakeFlowers: 10,
-  realFlowers: 25,
+  fakeFlowers: 3,
+  realFlowers: 9,
   macarons: 3,
+  stickerPrints: 5,
+  ediblePrint: 10,
 };
 
 const Settings = () => {
@@ -201,12 +209,30 @@ const Settings = () => {
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="fondant">Fondant Elements (per element)</Label>
+                <Label htmlFor="smallFondant">Small Fondant Element (per element)</Label>
                 <Input
-                  id="fondant"
+                  id="smallFondant"
                   type="number"
-                  value={config.fondantElements}
-                  onChange={(e) => setConfig({ ...config, fondantElements: parseFloat(e.target.value) || 0 })}
+                  value={config.smallFondant}
+                  onChange={(e) => setConfig({ ...config, smallFondant: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mediumFondant">Medium Fondant Element (per element)</Label>
+                <Input
+                  id="mediumFondant"
+                  type="number"
+                  value={config.mediumFondant}
+                  onChange={(e) => setConfig({ ...config, mediumFondant: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="largeFondant">Large Fondant Element (per element)</Label>
+                <Input
+                  id="largeFondant"
+                  type="number"
+                  value={config.largeFondant}
+                  onChange={(e) => setConfig({ ...config, largeFondant: parseFloat(e.target.value) || 0 })}
                 />
               </div>
               <div className="space-y-2">
@@ -243,6 +269,24 @@ const Settings = () => {
                   type="number"
                   value={config.macarons}
                   onChange={(e) => setConfig({ ...config, macarons: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="stickerPrints">Sticker Prints (per piece)</Label>
+                <Input
+                  id="stickerPrints"
+                  type="number"
+                  value={config.stickerPrints}
+                  onChange={(e) => setConfig({ ...config, stickerPrints: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ediblePrint">Edible Print (per piece)</Label>
+                <Input
+                  id="ediblePrint"
+                  type="number"
+                  value={config.ediblePrint}
+                  onChange={(e) => setConfig({ ...config, ediblePrint: parseFloat(e.target.value) || 0 })}
                 />
               </div>
             </CardContent>
