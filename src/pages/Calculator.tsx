@@ -20,6 +20,7 @@ interface PricingConfig {
   macarons: number;
   stickerPrints: number;
   ediblePrint: number;
+  miscItems: { [key: string]: { name: string; price: number } };
 }
 
 const defaultConfig: PricingConfig = {
@@ -78,6 +79,12 @@ const defaultConfig: PricingConfig = {
   macarons: 3,
   stickerPrints: 5,
   ediblePrint: 10,
+  miscItems: {
+    "misc1": { name: "Misc Item 1", price: 0 },
+    "misc2": { name: "Misc Item 2", price: 0 },
+    "misc3": { name: "Misc Item 3", price: 0 },
+    "misc4": { name: "Misc Item 4", price: 0 },
+  },
 };
 
 const Calculator = () => {
@@ -94,6 +101,12 @@ const Calculator = () => {
   const [macaronCount, setMacaronCount] = useState<number>(0);
   const [stickerPrintCount, setStickerPrintCount] = useState<number>(0);
   const [ediblePrintCount, setEdiblePrintCount] = useState<number>(0);
+  const [miscItemCounts, setMiscItemCounts] = useState<{ [key: string]: number }>({
+    misc1: 0,
+    misc2: 0,
+    misc3: 0,
+    misc4: 0,
+  });
 
   useEffect(() => {
     const saved = localStorage.getItem("cakePricing");
@@ -115,6 +128,12 @@ const Calculator = () => {
     if (params.get("macarons")) setMacaronCount(parseInt(params.get("macarons") || "0"));
     if (params.get("stickerPrints")) setStickerPrintCount(parseInt(params.get("stickerPrints") || "0"));
     if (params.get("ediblePrint")) setEdiblePrintCount(parseInt(params.get("ediblePrint") || "0"));
+    
+    // Load misc items from URL
+    if (params.get("misc1")) setMiscItemCounts(prev => ({ ...prev, misc1: parseInt(params.get("misc1") || "0") }));
+    if (params.get("misc2")) setMiscItemCounts(prev => ({ ...prev, misc2: parseInt(params.get("misc2") || "0") }));
+    if (params.get("misc3")) setMiscItemCounts(prev => ({ ...prev, misc3: parseInt(params.get("misc3") || "0") }));
+    if (params.get("misc4")) setMiscItemCounts(prev => ({ ...prev, misc4: parseInt(params.get("misc4") || "0") }));
   }, []);
 
   // Update URL params whenever selections change
@@ -133,9 +152,15 @@ const Calculator = () => {
     if (stickerPrintCount > 0) params.set("stickerPrints", stickerPrintCount.toString());
     if (ediblePrintCount > 0) params.set("ediblePrint", ediblePrintCount.toString());
     
+    // Add misc items to URL params
+    if (miscItemCounts.misc1 > 0) params.set("misc1", miscItemCounts.misc1.toString());
+    if (miscItemCounts.misc2 > 0) params.set("misc2", miscItemCounts.misc2.toString());
+    if (miscItemCounts.misc3 > 0) params.set("misc3", miscItemCounts.misc3.toString());
+    if (miscItemCounts.misc4 > 0) params.set("misc4", miscItemCounts.misc4.toString());
+    
     const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
     window.history.replaceState({}, "", newUrl);
-  }, [panSize, flavor, shape, smallFondantCount, mediumFondantCount, largeFondantCount, colorCount, fakeFlowerCount, realFlowerCount, macaronCount, stickerPrintCount, ediblePrintCount]);
+  }, [panSize, flavor, shape, smallFondantCount, mediumFondantCount, largeFondantCount, colorCount, fakeFlowerCount, realFlowerCount, macaronCount, stickerPrintCount, ediblePrintCount, miscItemCounts]);
 
   const calculateTotal = (): number => {
     let total = 0;
@@ -153,6 +178,13 @@ const Calculator = () => {
     total += macaronCount * config.macarons;
     total += stickerPrintCount * config.stickerPrints;
     total += ediblePrintCount * config.ediblePrint;
+    
+    // Add misc items to total
+    Object.entries(miscItemCounts).forEach(([key, count]) => {
+      if (config.miscItems[key]) {
+        total += count * config.miscItems[key].price;
+      }
+    });
     
     return total;
   };
@@ -346,6 +378,41 @@ const Calculator = () => {
                 </div>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Miscellaneous Items</CardTitle>
+                <CardDescription>Optional additional items</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {Object.entries(config.miscItems).map(([key, item]) => {
+                    // Only show if item has a name and price > 0
+                    if (!item.name || item.name === `Misc Item ${key.replace('misc', '')}` || item.price === 0) {
+                      return null;
+                    }
+                    return (
+                      <div key={key} className="space-y-2">
+                        <Label htmlFor={key}>{item.name} (${item.price} each)</Label>
+                        <Input
+                          id={key}
+                          type="number"
+                          min="0"
+                          value={miscItemCounts[key] || 0}
+                          onChange={(e) => setMiscItemCounts({ ...miscItemCounts, [key]: parseInt(e.target.value) || 0 })}
+                          className="w-full"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                {Object.values(config.miscItems).every(item => !item.name || item.name.startsWith('Misc Item') || item.price === 0) && (
+                  <p className="text-sm text-muted-foreground text-center py-2">
+                    No miscellaneous items configured. Add items in Settings.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           <div className="lg:col-span-1">
@@ -428,6 +495,17 @@ const Calculator = () => {
                       <span className="font-medium">${ediblePrintCount * config.ediblePrint}</span>
                     </div>
                   )}
+                  {Object.entries(miscItemCounts).map(([key, count]) => {
+                    if (count > 0 && config.miscItems[key] && config.miscItems[key].price > 0) {
+                      return (
+                        <div key={key} className="flex justify-between pb-2 border-b">
+                          <span className="text-muted-foreground">{config.miscItems[key].name} ({count})</span>
+                          <span className="font-medium">${count * config.miscItems[key].price}</span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
                 </div>
                 
                 <div className="mt-6 pt-4 border-t-2 border-primary/20">

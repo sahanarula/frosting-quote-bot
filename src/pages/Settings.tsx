@@ -20,6 +20,7 @@ interface PricingConfig {
   macarons: number;
   stickerPrints: number;
   ediblePrint: number;
+  miscItems: { [key: string]: { name: string; price: number } };
 }
 
 const defaultConfig: PricingConfig = {
@@ -78,6 +79,12 @@ const defaultConfig: PricingConfig = {
   macarons: 3,
   stickerPrints: 5,
   ediblePrint: 10,
+  miscItems: {
+    "misc1": { name: "Misc Item 1", price: 0 },
+    "misc2": { name: "Misc Item 2", price: 0 },
+    "misc3": { name: "Misc Item 3", price: 0 },
+    "misc4": { name: "Misc Item 4", price: 0 },
+  },
 };
 
 const Settings = () => {
@@ -120,6 +127,20 @@ const Settings = () => {
     setConfig({
       ...config,
       shapes: { ...config.shapes, [shape]: parseFloat(value) || 0 },
+    });
+  };
+
+  const updateMiscItemName = (key: string, name: string) => {
+    setConfig({
+      ...config,
+      miscItems: { ...config.miscItems, [key]: { ...config.miscItems[key], name } },
+    });
+  };
+
+  const updateMiscItemPrice = (key: string, value: string) => {
+    setConfig({
+      ...config,
+      miscItems: { ...config.miscItems, [key]: { ...config.miscItems[key], price: parseFloat(value) || 0 } },
     });
   };
 
@@ -288,6 +309,40 @@ const Settings = () => {
                   value={config.ediblePrint}
                   onChange={(e) => setConfig({ ...config, ediblePrint: parseFloat(e.target.value) || 0 })}
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Miscellaneous Items</CardTitle>
+              <CardDescription>Configure custom items with prices</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4">
+                {Object.entries(config.miscItems).map(([key, item]) => (
+                  <div key={key} className="grid gap-2 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor={`${key}-name`}>Item Name</Label>
+                      <Input
+                        id={`${key}-name`}
+                        type="text"
+                        value={item.name}
+                        onChange={(e) => updateMiscItemName(key, e.target.value)}
+                        placeholder="e.g., Gift Box"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`${key}-price`}>Price (per item)</Label>
+                      <Input
+                        id={`${key}-price`}
+                        type="number"
+                        value={item.price}
+                        onChange={(e) => updateMiscItemPrice(key, e.target.value)}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
