@@ -80,10 +80,10 @@ const defaultConfig: PricingConfig = {
   stickerPrints: 5,
   ediblePrint: 10,
   miscItems: {
-    "misc1": { name: "Misc Item 1", price: 0 },
-    "misc2": { name: "Misc Item 2", price: 0 },
-    "misc3": { name: "Misc Item 3", price: 0 },
-    "misc4": { name: "Misc Item 4", price: 0 },
+    "misc1": { name: "Gift Box", price: 10 },
+    "misc2": { name: "Candles", price: 5 },
+    "misc3": { name: "Cake Topper", price: 8 },
+    "misc4": { name: "Special Decoration", price: 12 },
   },
 };
 

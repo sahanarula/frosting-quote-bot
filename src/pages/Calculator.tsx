@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 import { Settings, Cake } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 interface PricingConfig {
   panSizes: { [key: string]: { price: number; servings: string } };
@@ -59,7 +60,7 @@ const defaultConfig: PricingConfig = {
     "Rose Pistachio": 5,
     "Kesar Pista": 5,
     "Nutella": 5,
-    "Ferrero Rocher": ,
+    "Ferrero Rocher": 15,
     "Kit-Kat": 10,
   },
   shapes: {
@@ -78,14 +79,15 @@ const defaultConfig: PricingConfig = {
   stickerPrints: 5,
   ediblePrint: 10,
   miscItems: {
-    "misc1": { name: "Misc Item 1", price: 0 },
-    "misc2": { name: "Misc Item 2", price: 0 },
-    "misc3": { name: "Misc Item 3", price: 0 },
-    "misc4": { name: "Misc Item 4", price: 0 },
+    "misc1": { name: "Gift Box", price: 10 },
+    "misc2": { name: "Candles", price: 5 },
+    "misc3": { name: "Cake Topper", price: 8 },
+    "misc4": { name: "Special Decoration", price: 12 },
   },
 };
 
 const Calculator = () => {
+  const { toast } = useToast();
   const [config, setConfig] = useState<PricingConfig>(defaultConfig);
   const [panSize, setPanSize] = useState<string>("");
   const [flavor, setFlavor] = useState<string>("");
@@ -111,7 +113,9 @@ const Calculator = () => {
     if (saved) {
       setConfig(JSON.parse(saved));
     }
+  }, []);
 
+  useEffect(() => {
     // Load from URL params
     const params = new URLSearchParams(window.location.search);
     if (params.get("panSize")) setPanSize(params.get("panSize") || "");
@@ -150,15 +154,15 @@ const Calculator = () => {
     if (stickerPrintCount > 0) params.set("stickerPrints", stickerPrintCount.toString());
     if (ediblePrintCount > 0) params.set("ediblePrint", ediblePrintCount.toString());
     
-    // Add misc items to URL params
-    if (miscItemCounts.misc1 > 0) params.set("misc1", miscItemCounts.misc1.toString());
-    if (miscItemCounts.misc2 > 0) params.set("misc2", miscItemCounts.misc2.toString());
-    if (miscItemCounts.misc3 > 0) params.set("misc3", miscItemCounts.misc3.toString());
-    if (miscItemCounts.misc4 > 0) params.set("misc4", miscItemCounts.misc4.toString());
-    
-    const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
-    window.history.replaceState({}, "", newUrl);
-  }, [panSize, flavor, shape, smallFondantCount, mediumFondantCount, largeFondantCount, colorCount, fakeFlowerCount, realFlowerCount, macaronCount, stickerPrintCount, ediblePrintCount, miscItemCounts]);
+    Object.entries(miscItemCounts).forEach(([key, count]) => {
+      if (count > 0) params.set(key, count.toString());
+    });
+
+    // Add config to params
+    params.set("config", JSON.stringify(config));
+
+    window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+  }, [panSize, flavor, shape, smallFondantCount, mediumFondantCount, largeFondantCount, colorCount, fakeFlowerCount, realFlowerCount, macaronCount, stickerPrintCount, ediblePrintCount, miscItemCounts, config]);
 
   const calculateTotal = (): number => {
     let total = 0;
@@ -187,6 +191,14 @@ const Calculator = () => {
     return total;
   };
 
+  const copyUrl = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast({
+      title: "Link copied!",
+      description: "Shareable quote link has been copied to clipboard.",
+    });
+  };
+
   const total = calculateTotal();
 
   return (
@@ -202,15 +214,128 @@ const Calculator = () => {
               <p className="text-muted-foreground">Select your options to get an instant quote</p>
             </div>
           </div>
-          <Link to="/settings">
-            <Button variant="outline" size="icon">
+          <Button variant="outline" size="icon" asChild>
+            <Link to="/settings">
               <Settings className="h-4 w-4" />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
-          <div className="space-y-6 lg:col-span-2">
+          {/* Quote Card - Shows first on mobile, sidebar on desktop */}
+          <div className="lg:col-span-1 lg:order-2">
+            <Card className="lg:sticky lg:top-8 border-primary/20 shadow-lg">
+              <CardHeader className="bg-primary/5">
+                <CardTitle className="text-2xl">Price Quote</CardTitle>
+                <CardDescription>Your custom cake estimate</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-3 text-sm">
+                  {panSize && (
+                    <div className="flex justify-between pb-2 border-b">
+                      <span className="text-muted-foreground">Pan Size: {panSize}</span>
+                      <span className="font-medium">${config.panSizes[panSize]?.price}</span>
+                    </div>
+                  )}
+                  {flavor && config.flavors[flavor] > 0 && (
+                    <div className="flex justify-between pb-2 border-b">
+                      <span className="text-muted-foreground">Flavor: {flavor}</span>
+                      <span className="font-medium">${config.flavors[flavor]}</span>
+                    </div>
+                  )}
+                  {shape && config.shapes[shape] > 0 && (
+                    <div className="flex justify-between pb-2 border-b">
+                      <span className="text-muted-foreground">Shape: {shape}</span>
+                      <span className="font-medium">${config.shapes[shape]}</span>
+                    </div>
+                  )}
+                  {smallFondantCount > 0 && (
+                    <div className="flex justify-between pb-2 border-b">
+                      <span className="text-muted-foreground">Small Fondant ({smallFondantCount})</span>
+                      <span className="font-medium">${smallFondantCount * config.smallFondant}</span>
+                    </div>
+                  )}
+                  {mediumFondantCount > 0 && (
+                    <div className="flex justify-between pb-2 border-b">
+                      <span className="text-muted-foreground">Medium Fondant ({mediumFondantCount})</span>
+                      <span className="font-medium">${mediumFondantCount * config.mediumFondant}</span>
+                    </div>
+                  )}
+                  {largeFondantCount > 0 && (
+                    <div className="flex justify-between pb-2 border-b">
+                      <span className="text-muted-foreground">Large Fondant ({largeFondantCount})</span>
+                      <span className="font-medium">${largeFondantCount * config.largeFondant}</span>
+                    </div>
+                  )}
+                  {colorCount > 0 && (
+                    <div className="flex justify-between pb-2 border-b">
+                      <span className="text-muted-foreground">Colors ({colorCount})</span>
+                      <span className="font-medium">${colorCount * config.colors}</span>
+                    </div>
+                  )}
+                  {fakeFlowerCount > 0 && (
+                    <div className="flex justify-between pb-2 border-b">
+                      <span className="text-muted-foreground">Fake Flowers ({fakeFlowerCount})</span>
+                      <span className="font-medium">${fakeFlowerCount * config.fakeFlowers}</span>
+                    </div>
+                  )}
+                  {realFlowerCount > 0 && (
+                    <div className="flex justify-between pb-2 border-b">
+                      <span className="text-muted-foreground">Real Flowers ({realFlowerCount})</span>
+                      <span className="font-medium">${realFlowerCount * config.realFlowers}</span>
+                    </div>
+                  )}
+                  {macaronCount > 0 && (
+                    <div className="flex justify-between pb-2 border-b">
+                      <span className="text-muted-foreground">Macarons ({macaronCount})</span>
+                      <span className="font-medium">${macaronCount * config.macarons}</span>
+                    </div>
+                  )}
+                  {stickerPrintCount > 0 && (
+                    <div className="flex justify-between pb-2 border-b">
+                      <span className="text-muted-foreground">Sticker Prints ({stickerPrintCount})</span>
+                      <span className="font-medium">${stickerPrintCount * config.stickerPrints}</span>
+                    </div>
+                  )}
+                  {ediblePrintCount > 0 && (
+                    <div className="flex justify-between pb-2 border-b">
+                      <span className="text-muted-foreground">Edible Print ({ediblePrintCount})</span>
+                      <span className="font-medium">${ediblePrintCount * config.ediblePrint}</span>
+                    </div>
+                  )}
+                  {Object.entries(miscItemCounts).map(([key, count]) => {
+                    if (count > 0 && config.miscItems[key]) {
+                      return (
+                        <div key={key} className="flex justify-between pb-2 border-b">
+                          <span className="text-muted-foreground">{config.miscItems[key].name} ({count})</span>
+                          <span className="font-medium">${count * config.miscItems[key].price}</span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
+                
+                <div className="mt-6 pt-6 border-t-2 border-primary/20">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-semibold">Total</span>
+                    <span className="text-3xl font-bold text-primary">${calculateTotal()}</span>
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={copyUrl} 
+                  className="w-full mt-4"
+                  variant="outline"
+                >
+                  Copy Shareable Link
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Forms - Second on mobile, main area on desktop */}
+          <div className="space-y-6 lg:col-span-2 lg:order-1">
             <Card>
               <CardHeader>
                 <CardTitle>Basic Options</CardTitle>
@@ -407,115 +532,6 @@ const Calculator = () => {
                 {Object.values(config.miscItems).every(item => !item.name || item.name.startsWith('Misc Item') || item.price === 0) && (
                   <p className="text-sm text-muted-foreground text-center py-2">
                     No miscellaneous items configured. Add items in Settings.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="lg:col-span-1">
-            <Card className="sticky top-8 border-primary/20 shadow-lg">
-              <CardHeader className="bg-primary/5">
-                <CardTitle className="text-2xl">Price Quote</CardTitle>
-                <CardDescription>Your custom cake estimate</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-3 text-sm">
-                  {panSize && (
-                    <div className="flex justify-between pb-2 border-b">
-                      <span className="text-muted-foreground">Pan Size: {panSize}</span>
-                      <span className="font-medium">${config.panSizes[panSize]?.price}</span>
-                    </div>
-                  )}
-                  {flavor && config.flavors[flavor] > 0 && (
-                    <div className="flex justify-between pb-2 border-b">
-                      <span className="text-muted-foreground">Flavor: {flavor}</span>
-                      <span className="font-medium">${config.flavors[flavor]}</span>
-                    </div>
-                  )}
-                  {shape && config.shapes[shape] > 0 && (
-                    <div className="flex justify-between pb-2 border-b">
-                      <span className="text-muted-foreground">Shape: {shape}</span>
-                      <span className="font-medium">${config.shapes[shape]}</span>
-                    </div>
-                  )}
-                  {smallFondantCount > 0 && (
-                    <div className="flex justify-between pb-2 border-b">
-                      <span className="text-muted-foreground">Small Fondant ({smallFondantCount})</span>
-                      <span className="font-medium">${smallFondantCount * config.smallFondant}</span>
-                    </div>
-                  )}
-                  {mediumFondantCount > 0 && (
-                    <div className="flex justify-between pb-2 border-b">
-                      <span className="text-muted-foreground">Medium Fondant ({mediumFondantCount})</span>
-                      <span className="font-medium">${mediumFondantCount * config.mediumFondant}</span>
-                    </div>
-                  )}
-                  {largeFondantCount > 0 && (
-                    <div className="flex justify-between pb-2 border-b">
-                      <span className="text-muted-foreground">Large Fondant ({largeFondantCount})</span>
-                      <span className="font-medium">${largeFondantCount * config.largeFondant}</span>
-                    </div>
-                  )}
-                  {colorCount > 0 && (
-                    <div className="flex justify-between pb-2 border-b">
-                      <span className="text-muted-foreground">Colors ({colorCount})</span>
-                      <span className="font-medium">${colorCount * config.colors}</span>
-                    </div>
-                  )}
-                  {fakeFlowerCount > 0 && (
-                    <div className="flex justify-between pb-2 border-b">
-                      <span className="text-muted-foreground">Fake Flowers ({fakeFlowerCount})</span>
-                      <span className="font-medium">${fakeFlowerCount * config.fakeFlowers}</span>
-                    </div>
-                  )}
-                  {realFlowerCount > 0 && (
-                    <div className="flex justify-between pb-2 border-b">
-                      <span className="text-muted-foreground">Real Flowers ({realFlowerCount})</span>
-                      <span className="font-medium">${realFlowerCount * config.realFlowers}</span>
-                    </div>
-                  )}
-                  {macaronCount > 0 && (
-                    <div className="flex justify-between pb-2 border-b">
-                      <span className="text-muted-foreground">Macarons ({macaronCount})</span>
-                      <span className="font-medium">${macaronCount * config.macarons}</span>
-                    </div>
-                  )}
-                  {stickerPrintCount > 0 && (
-                    <div className="flex justify-between pb-2 border-b">
-                      <span className="text-muted-foreground">Sticker Prints ({stickerPrintCount})</span>
-                      <span className="font-medium">${stickerPrintCount * config.stickerPrints}</span>
-                    </div>
-                  )}
-                  {ediblePrintCount > 0 && (
-                    <div className="flex justify-between pb-2 border-b">
-                      <span className="text-muted-foreground">Edible Print ({ediblePrintCount})</span>
-                      <span className="font-medium">${ediblePrintCount * config.ediblePrint}</span>
-                    </div>
-                  )}
-                  {Object.entries(miscItemCounts).map(([key, count]) => {
-                    if (count > 0 && config.miscItems[key] && config.miscItems[key].price > 0) {
-                      return (
-                        <div key={key} className="flex justify-between pb-2 border-b">
-                          <span className="text-muted-foreground">{config.miscItems[key].name} ({count})</span>
-                          <span className="font-medium">${count * config.miscItems[key].price}</span>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })}
-                </div>
-                
-                <div className="mt-6 pt-4 border-t-2 border-primary/20">
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-semibold">Total</span>
-                    <span className="text-3xl font-bold text-primary">${total.toFixed(2)}</span>
-                  </div>
-                </div>
-
-                {total === 0 && (
-                  <p className="mt-4 text-xs text-center text-muted-foreground">
-                    Select options above to calculate your price
                   </p>
                 )}
               </CardContent>
